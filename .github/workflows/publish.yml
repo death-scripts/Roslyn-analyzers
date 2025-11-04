@@ -17,6 +17,7 @@ jobs:
     runs-on: windows-latest
     env:
       Configuration: Release
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,31 +36,63 @@ jobs:
           $input = "${{ github.event.inputs.version }}"
           $fromRelease = "${{ github.event.release.tag_name }}"
           $ref = "${{ github.ref }}"
+          $eventName = "${{ github.event_name }}"
+          $defaultBranch = "${{ github.event.repository.default_branch }}"
 
-          if (-not [string]::IsNullOrWhiteSpace($input)) {
+          $hasInput = -not [string]::IsNullOrWhiteSpace($input)
+          $isTagRef = $ref -like 'refs/tags/*'
+          $bumpMode = ($eventName -eq 'workflow_dispatch') -and (-not $hasInput) -and (-not $isTagRef)
+
+          if ($hasInput) {
             $v = $input
           }
           elseif (-not [string]::IsNullOrWhiteSpace($fromRelease)) {
             $v = $fromRelease.TrimStart('v','V')
           }
-          elseif ($ref -like 'refs/tags/*') {
+          elseif ($isTagRef) {
             $v = $ref.Substring(10).TrimStart('v','V')
           }
+          elseif ($bumpMode) {
+            [xml]$xml = Get-Content 'DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj'
+            $base = $xml.Project.PropertyGroup.Version
+            if (-not $base) { $base = '1.0.0' }
+            $parts = $base.Split('.')
+            while ($parts.Count -lt 3) { $parts += '0' }
+            $parts[2] = ([int]$parts[2]) + 1
+            $v = ($parts[0..2] -join '.')
+          }
           else {
-            # Fallback to csproj Version
             [xml]$xml = Get-Content 'DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj'
             $v = $xml.Project.PropertyGroup.Version
           }
 
           if (-not $v) { throw "Could not determine version" }
           "PKG_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "Package version: $v"
+          "DEFAULT_BRANCH=$defaultBranch" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "BUMP_MODE=$bumpMode" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Package version: $v (bumpMode=$bumpMode)"
 
       - name: Restore
         run: dotnet restore DeathScriptsAnalyzer.sln
 
       - name: Build
         run: dotnet build DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj -c $env:Configuration --no-restore
+
+      - name: Update csproj version and commit (bump mode)
+        if: env.BUMP_MODE == 'True'
+        shell: pwsh
+        run: |
+          Write-Host "Updating csproj version to $env:PKG_VERSION on $env:DEFAULT_BRANCH"
+          git fetch origin 
+          git checkout $env:DEFAULT_BRANCH
+          [xml]$xml = Get-Content 'DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj'
+          $xml.Project.PropertyGroup.Version = $env:PKG_VERSION
+          $xml.Save('DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj')
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj
+          git commit -m "chore: bump analyzer version to $env:PKG_VERSION [skip ci]" || echo "No changes to commit"
+          git push origin $env:DEFAULT_BRANCH
 
       - name: Test
         run: >-
@@ -102,7 +135,7 @@ jobs:
           --skip-duplicate
 
       - name: Publish to NuGet.org (if API key present)
-        if: ${{ secrets.NUGET_API_KEY != '' }}
+        if: env.NUGET_API_KEY != ''
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: >-
@@ -110,3 +143,24 @@ jobs:
           --source https://api.nuget.org/v3/index.json
           --api-key $env:NUGET_API_KEY
           --skip-duplicate
+
+      - name: Sync csproj version to tag on default branch
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+        shell: pwsh
+        run: |
+          Write-Host "Syncing csproj version to $env:PKG_VERSION on $env:DEFAULT_BRANCH"
+          git fetch origin 
+          git checkout $env:DEFAULT_BRANCH
+          [xml]$xml = Get-Content 'DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj'
+          $current = $xml.Project.PropertyGroup.Version
+          if ($current -ne $env:PKG_VERSION) {
+            $xml.Project.PropertyGroup.Version = $env:PKG_VERSION
+            $xml.Save('DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj')
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj
+            git commit -m "chore: sync analyzer version to $env:PKG_VERSION [skip ci]"
+            git push origin $env:DEFAULT_BRANCH
+          } else {
+            Write-Host "csproj already at $current; no sync needed"
+          }

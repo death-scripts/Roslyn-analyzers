@@ -1,4 +1,6 @@
-+# ConstructorLengthAnalyzer
+![Publish Analyzer](https://github.com/death-scripts/Roslyn-analyzers/actions/workflows/publish.yml/badge.svg)
+
+# ConstructorLengthAnalyzer
 
 +Detects C# constructors where the declaration line exceeds 100 characters and offers a code fix to place each parameter on a new line.
 
