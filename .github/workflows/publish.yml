@@ -1,0 +1,112 @@
+name: Publish Analyzer
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.4). Leave blank to use tag or csproj.'
+        required: false
+
+jobs:
+  pack-and-publish:
+    runs-on: windows-latest
+    env:
+      Configuration: Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine Version
+        id: ver
+        shell: pwsh
+        run: |
+          $input = "${{ github.event.inputs.version }}"
+          $fromRelease = "${{ github.event.release.tag_name }}"
+          $ref = "${{ github.ref }}"
+
+          if (-not [string]::IsNullOrWhiteSpace($input)) {
+            $v = $input
+          }
+          elseif (-not [string]::IsNullOrWhiteSpace($fromRelease)) {
+            $v = $fromRelease.TrimStart('v','V')
+          }
+          elseif ($ref -like 'refs/tags/*') {
+            $v = $ref.Substring(10).TrimStart('v','V')
+          }
+          else {
+            # Fallback to csproj Version
+            [xml]$xml = Get-Content 'DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj'
+            $v = $xml.Project.PropertyGroup.Version
+          }
+
+          if (-not $v) { throw "Could not determine version" }
+          "PKG_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Package version: $v"
+
+      - name: Restore
+        run: dotnet restore DeathScriptsAnalyzer.sln
+
+      - name: Build
+        run: dotnet build DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj -c $env:Configuration --no-restore
+
+      - name: Test
+        run: >-
+          dotnet test Analyzer.Tests/Analyzer.Tests.csproj
+          -c $env:Configuration --no-build
+          --logger trx --results-directory .\TestResults
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/*.trx
+          if-no-files-found: ignore
+
+      - name: Pack
+        run: >-
+          dotnet pack DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj
+          -c $env:Configuration --no-build -o out
+          /p:ContinuousIntegrationBuild=true
+          /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
+          /p:Version=$env:PKG_VERSION
+
+      - name: Upload Packages Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ env.PKG_VERSION }}
+          path: |
+            out/*.nupkg
+            out/*.snupkg
+
+      - name: Publish to GitHub Packages
+        env:
+          GH_PACKAGES_URL: https://nuget.pkg.github.com/death-scripts/index.json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          dotnet nuget push "out/*.nupkg"
+          --source $env:GH_PACKAGES_URL
+          --api-key $env:GH_TOKEN
+          --skip-duplicate
+
+      - name: Publish to NuGet.org (if API key present)
+        if: ${{ secrets.NUGET_API_KEY != '' }}
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: >-
+          dotnet nuget push "out/*.nupkg"
+          --source https://api.nuget.org/v3/index.json
+          --api-key $env:NUGET_API_KEY
+          --skip-duplicate
