@@ -1,5 +1,9 @@
 name: Publish Analyzer
 
+permissions:
+  contents: write
+  packages: write
+
 on:
   release:
     types: [published]
@@ -124,17 +128,17 @@ jobs:
             out/*.nupkg
             out/*.snupkg
 
-      - name: Publish to GitHub Packages
+      - name: Publish to GitHub Packages (personal)
         env:
-          GH_PACKAGES_URL: https://nuget.pkg.github.com/death-scripts/index.json
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PACKAGES_URL: https://nuget.pkg.github.com/${{ secrets.GH_PACKAGES_OWNER }}/index.json
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
         shell: pwsh
         run: |
           $pkgs = Get-ChildItem -Path out -Filter *.nupkg
           if (-not $pkgs) { throw "No packages found in 'out'" }
           foreach ($p in $pkgs) {
-            Write-Host "Pushing $($p.FullName) to GitHub Packages"
-            dotnet nuget push $p.FullName --source $env:GH_PACKAGES_URL --api-key $env:GH_TOKEN --skip-duplicate
+            Write-Host "Pushing $($p.FullName) to $env:GH_PACKAGES_URL"
+            dotnet nuget push $p.FullName --source $env:GH_PACKAGES_URL --api-key $env:GH_PACKAGES_TOKEN --skip-duplicate
           }
 
       - name: Publish to NuGet.org (if API key present)
