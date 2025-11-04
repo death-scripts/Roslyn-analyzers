@@ -1,0 +1,13 @@
+﻿{
+    "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+    "settings": {
+        "documentationRules": {
+            "companyName": "death-scripts",
+            "xmlHeader": false,
+            "copyrightText": "Copyright (c) {companyName}. All rights reserved.",
+            "documentInternalElements": true,
+            "documentPrivateElements": true,
+            "documentPrivateFields": true
+        }
+    }
+}
