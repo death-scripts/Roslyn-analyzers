@@ -128,21 +128,27 @@ jobs:
         env:
           GH_PACKAGES_URL: https://nuget.pkg.github.com/death-scripts/index.json
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          dotnet nuget push "out/*.nupkg"
-          --source $env:GH_PACKAGES_URL
-          --api-key $env:GH_TOKEN
-          --skip-duplicate
+        shell: pwsh
+        run: |
+          $pkgs = Get-ChildItem -Path out -Filter *.nupkg
+          if (-not $pkgs) { throw "No packages found in 'out'" }
+          foreach ($p in $pkgs) {
+            Write-Host "Pushing $($p.FullName) to GitHub Packages"
+            dotnet nuget push $p.FullName --source $env:GH_PACKAGES_URL --api-key $env:GH_TOKEN --skip-duplicate
+          }
 
       - name: Publish to NuGet.org (if API key present)
         if: env.NUGET_API_KEY != ''
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: >-
-          dotnet nuget push "out/*.nupkg"
-          --source https://api.nuget.org/v3/index.json
-          --api-key $env:NUGET_API_KEY
-          --skip-duplicate
+        shell: pwsh
+        run: |
+          $pkgs = Get-ChildItem -Path out -Filter *.nupkg
+          if (-not $pkgs) { throw "No packages found in 'out'" }
+          foreach ($p in $pkgs) {
+            Write-Host "Pushing $($p.FullName) to NuGet.org"
+            dotnet nuget push $p.FullName --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
+          }
 
       - name: Sync csproj version to tag on default branch
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
