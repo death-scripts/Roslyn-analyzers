@@ -141,6 +141,21 @@ jobs:
             dotnet nuget push $p.FullName --source $env:GH_PACKAGES_URL --api-key $env:GH_PACKAGES_TOKEN --skip-duplicate
           }
 
+      - name: Publish to GitHub Packages (org)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $pkgs = Get-ChildItem -Path out -Filter *.nupkg
+          if (-not $pkgs) { throw "No packages found in 'out'" }
+          foreach ($p in $pkgs) {
+            Write-Host "Pushing $($p.FullName) to org feed (death-scripts)"
+            dotnet nuget push $p.FullName `
+              --source https://nuget.pkg.github.com/death-scripts/index.json `
+              --api-key $env:GITHUB_TOKEN `
+              --skip-duplicate
+          }
+
       - name: Publish to NuGet.org (if API key present)
         if: env.NUGET_API_KEY != ''
         env:
