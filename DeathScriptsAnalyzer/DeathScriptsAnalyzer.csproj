@@ -1,38 +1,32 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<Authors>John Schruben</Authors>
-		<Description>Custom Roslyn analyzers</Description>
-		<TargetFramework>netstandard2.0</TargetFramework>
-		<LangVersion>latest</LangVersion>
-		<Nullable>enable</Nullable>
-		<AssemblyName>DeathScriptsAnalyzer</AssemblyName>
-		<RootNamespace>DeathScriptsAnalyzer</RootNamespace>
-		<PackageId>DeathScripts.Analyzer</PackageId>
-		<IncludeBuildOutput>false</IncludeBuildOutput>
-		<PackageTags>roslyn;analyzers</PackageTags>
-		<PackageProjectUrl>https://github.com/death-scripts/Roslyn-analyzers</PackageProjectUrl>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<IncludeBuildOutput>true</IncludeBuildOutput>
-		<Version>1.0.3</Version>
-		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Include="README.md" Pack="false" />
-	</ItemGroup>
-	
-	<ItemGroup>
-		<None Include="$(OutputPath)$(AssemblyName).dll"
-			  Pack="true"
-			  PackagePath="analyzers/dotnet/cs"
-			  Visible="false" />
-	</ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Authors>John Schruben</Authors>
+    <Description>Custom Roslyn analyzers</Description>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DeathScriptsAnalyzer</AssemblyName>
+    <RootNamespace>DeathScriptsAnalyzer</RootNamespace>
+    <PackageId>DeathScripts.Analyzer</PackageId>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PackageTags>roslyn;analyzers</PackageTags>
+    <PackageProjectUrl>https://github.com/death-scripts/Roslyn-analyzers</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <Version>1.0.7</Version>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
 </Project>
