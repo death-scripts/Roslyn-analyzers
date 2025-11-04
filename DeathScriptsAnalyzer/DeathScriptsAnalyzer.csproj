@@ -10,7 +10,7 @@
 		<PackageId>DeathScripts.Analyzer</PackageId>
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<PackageTags>roslyn;analyzers</PackageTags>
-		<PackageProjectUrl>https://github.com/JohnSchruben/Roslyn-analyzers</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/death-scripts/Roslyn-analyzers</PackageProjectUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
 		<Version>1.0.3</Version>

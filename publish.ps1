@@ -5,6 +5,6 @@ dotnet clean DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj
 dotnet pack DeathScriptsAnalyzer/DeathScriptsAnalyzer.csproj -c Release -o out
 
 dotnet nuget push "out\*.nupkg" `
-  --source "https://nuget.pkg.github.com/JohnSchruben/index.json" `
+  --source "https://nuget.pkg.github.com/death-scripts/index.json" `
   --api-key $env:GITHUB_TOKEN `
   --configfile .\NuGet.config `
