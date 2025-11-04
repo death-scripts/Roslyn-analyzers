@@ -15,6 +15,8 @@ tab_width = 4
 end_of_line = crlf
 insert_final_newline = false
 
+dotnet_diagnostic.DS0001.severity = warning
+dotnet_diagnostic.DS0052.severity = warning
 #### .NET Code Actions ####
 
 dotnet_diagnostic.SA1200.severity = none
@@ -287,8 +289,6 @@ dotnet_diagnostic.CS8618.severity = none
 
 # CA1416: Validate platform compatibility
 dotnet_diagnostic.CA1416.severity = none
-dotnet_diagnostic.CL0001.severity = warning
-dotnet_diagnostic.CL0052.severity = warning
 
 [*.{cs,vb}]
 dotnet_style_operator_placement_when_wrapping = beginning_of_line

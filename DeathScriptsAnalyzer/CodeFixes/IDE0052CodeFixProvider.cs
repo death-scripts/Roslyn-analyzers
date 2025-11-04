@@ -31,7 +31,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DeathScriptsAnalyzer.CodeFixes
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(IDE0052CodeFixProvider)), Shared]
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(IDE0052CodeFixProvider))]
+    [Shared]
     public sealed class IDE0052CodeFixProvider : CodeFixProvider
     {
         private const string TargetDiagnosticId = "IDE0052"; // Remove unread private members (built-in)
@@ -100,6 +101,7 @@ namespace DeathScriptsAnalyzer.CodeFixes
                     }
                 }
             }
+
             return count;
         }
 
@@ -111,11 +113,13 @@ namespace DeathScriptsAnalyzer.CodeFixes
                 ISymbol? sym = model.GetSymbolInfo(id).Symbol;
                 return SymbolEqualityComparer.Default.Equals(sym, field);
             }
+
             if (left is MemberAccessExpressionSyntax member && member.IsKind(SyntaxKind.SimpleMemberAccessExpression))
             {
                 ISymbol? sym = model.GetSymbolInfo(member).Symbol;
                 return SymbolEqualityComparer.Default.Equals(sym, field);
             }
+
             return false;
         }
 
@@ -219,6 +223,7 @@ namespace DeathScriptsAnalyzer.CodeFixes
                             keep.Add(annStmt);
                         }
                     }
+
                     updatedCtor = updatedCtor.WithBody(annCtor.Body.WithStatements(SyntaxFactory.List(keep)));
                 }
 

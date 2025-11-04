@@ -31,7 +31,8 @@ using Microsoft.CodeAnalysis.Formatting;
 
 namespace DeathScriptsAnalyzer.CodeFixes
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConstructorLengthCodeFixProvider)), Shared]
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConstructorLengthCodeFixProvider))]
+    [Shared]
     public sealed class ConstructorLengthCodeFixProvider : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(ConstructorLengthAnalyzer.DiagnosticId);
@@ -87,6 +88,7 @@ namespace DeathScriptsAnalyzer.CodeFixes
             System.Collections.Generic.IEnumerable<ParameterSyntax> updatedParameters = parameterList.Parameters.Select(p =>
             {
                 SyntaxTriviaList leading = p.GetLeadingTrivia();
+
                 // Trim leading whitespace only; keep comments if any
                 SyntaxTriviaList trimmed = leading.SkipWhile(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToSyntaxTriviaList();
                 SyntaxTriviaList newLeading = SyntaxFactory.TriviaList(SyntaxFactory.ElasticCarriageReturnLineFeed, SyntaxFactory.Whitespace(indent)).AddRange(trimmed);

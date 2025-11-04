@@ -28,22 +28,30 @@ namespace DeathScriptsAnalyzer.Analyzers
     public sealed class ConstructorLengthAnalyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "DS0001";
-
         private const string Category = "Formatting";
-        private static readonly LocalizableString Description = "When a constructor declaration line exceeds 100 characters, parameters should be placed on new lines.";
-        private static readonly LocalizableString Message = "Constructor signature exceeds 100 characters";
 
-        private static readonly DiagnosticDescriptor Rule = new(
-            DiagnosticId,
-            Title,
-            Message,
-            Category,
-            DiagnosticSeverity.Info,
-            isEnabledByDefault: true,
-            description: Description);
+        private const string DescriptionText =
+                    "When a constructor declaration line exceeds 100 characters, parameters should be placed on new lines.";
 
-        private static readonly LocalizableString Title = "Constructor signature exceeds 100 characters";
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+        private const string MessageText = "Constructor signature exceeds 100 characters";
+
+        // Plain strings are fine; no need for LocalizableString unless you localize
+        private const string TitleText = "Constructor signature exceeds 100 characters";
+
+        private static readonly DiagnosticDescriptor Rule;
+
+        // ✅ Static ctor runs after type is loaded; safe from field order shuffles
+        static ConstructorLengthAnalyzer() => Rule = new DiagnosticDescriptor(
+                id: DiagnosticId,
+                title: TitleText,
+                messageFormat: MessageText,
+                category: Category,
+                defaultSeverity: DiagnosticSeverity.Info,
+                isEnabledByDefault: true,
+                description: DescriptionText);
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+            => ImmutableArray.Create(Rule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -60,17 +68,13 @@ namespace DeathScriptsAnalyzer.Analyzers
                 return;
             }
 
-            SyntaxTree tree = decl.SyntaxTree;
-            Microsoft.CodeAnalysis.Text.SourceText text = tree.GetText(context.CancellationToken);
-
-            // Measure the length of the first line where the constructor starts.
+            Microsoft.CodeAnalysis.Text.SourceText text = decl.SyntaxTree.GetText(context.CancellationToken);
             int start = decl.GetFirstToken(includeZeroWidth: true).SpanStart;
             Microsoft.CodeAnalysis.Text.TextLine startLine = text.Lines.GetLineFromPosition(start);
             string lineText = startLine.ToString();
 
             if (lineText.Length > 100)
             {
-                // Report on the parameter list to guide the fix.
                 Location location = decl.ParameterList.GetLocation();
                 context.ReportDiagnostic(Diagnostic.Create(Rule, location));
             }
