@@ -3,9 +3,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <AssemblyName>ConstructorLengthAnalyzer</AssemblyName>
-    <RootNamespace>ConstructorLengthAnalyzer</RootNamespace>
-    <PackageId>ConstructorLengthAnalyzer</PackageId>
+    <AssemblyName>DeathScriptsAnalyzer</AssemblyName>
+    <RootNamespace>DeathScriptsAnalyzer</RootNamespace>
+    <PackageId>DeathScriptsAnalyzer</PackageId>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>

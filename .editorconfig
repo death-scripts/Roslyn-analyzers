@@ -30,6 +30,7 @@ dotnet_diagnostic.IDE0305.severity = warning
 dotnet_diagnostic.IDE0060.severity = warning
 dotnet_diagnostic.IDE0260.severity = warning
 dotnet_diagnostic.IDE0052.severity = warning
+dotnet_diagnostic.IDE0130.severity = warning #namespace matches folder
 
 # Type members
 dotnet_hide_advanced_members = false
