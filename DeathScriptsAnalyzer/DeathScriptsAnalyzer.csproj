@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/death-scripts/Roslyn-analyzers</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IncludeBuildOutput>true</IncludeBuildOutput>
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
