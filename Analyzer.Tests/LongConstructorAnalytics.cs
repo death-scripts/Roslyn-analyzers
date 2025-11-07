@@ -29,6 +29,12 @@ namespace Analyzer.Tests
 
         // private readonly LongConstructorAnalytics two;
 
+        ///// <summary>
+        ///// Initializes a new instance of the <see cref="LongConstructorAnalytics"/> class.
+        ///// </summary>
+        ///// <param name="one">The one.</param>
+        ///// <param name="two">The two.</param>
+        ///// <param name="three">The three.</param>
         // public LongConstructorAnalytics(LongConstructorAnalytics one, LongConstructorAnalytics two, LongConstructorAnalytics three)
         // {
         //    this.one = one;

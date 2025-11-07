@@ -232,6 +232,7 @@ namespace DeathScriptsAnalyzer.CodeFixes
                     updatedCtor = updatedCtor.WithExpressionBody(null).WithSemicolonToken(default).WithBody(updatedCtor.Body ?? SyntaxFactory.Block());
                 }
 
+                List<string> removedParamNames = [];
                 if (candidateParameters.Count > 0)
                 {
                     foreach (IParameterSymbol param in candidateParameters)
@@ -250,10 +251,50 @@ namespace DeathScriptsAnalyzer.CodeFixes
                                 {
                                     SeparatedSyntaxList<ParameterSyntax> newParams = updatedCtor.ParameterList.Parameters.RemoveAt(index);
                                     updatedCtor = updatedCtor.WithParameterList(updatedCtor.ParameterList.WithParameters(newParams));
+                                    removedParamNames.Add(origParamSyntax.Identifier.ValueText);
                                 }
                             }
                         }
                     }
+                }
+
+                if (removedParamNames.Count > 0)
+                {
+                    SyntaxTriviaList leading = updatedCtor.GetLeadingTrivia();
+                    bool changed = false;
+                    List<SyntaxTrivia> list = leading.ToList();
+                    for (int t = 0; t < list.Count; t++)
+                    {
+                        SyntaxTrivia trivia = list[t];
+                        if (trivia.HasStructure && trivia.GetStructure() is DocumentationCommentTriviaSyntax doc)
+                        {
+                            DocumentationCommentTriviaSyntax newDoc = doc;
+                            foreach (string pn in removedParamNames)
+                            {
+                                newDoc = RemoveParamDocumentation(newDoc, pn);
+                            }
+
+                            if (!ReferenceEquals(newDoc, doc))
+                            {
+                                list[t] = SyntaxFactory.Trivia(newDoc);
+                                changed = true;
+                            }
+                        }
+                    }
+
+                    if (changed)
+                    {
+                        updatedCtor = updatedCtor.WithLeadingTrivia(SyntaxFactory.TriviaList(list));
+                    }
+                }
+
+                // If all parameters were removed, normalize the parameter list to "()" on a single line
+                if (updatedCtor.ParameterList is { Parameters.Count: 0 } pl)
+                {
+                    ParameterListSyntax normalized = SyntaxFactory.ParameterList()
+                        .WithOpenParenToken(SyntaxFactory.Token(SyntaxKind.OpenParenToken))
+                        .WithCloseParenToken(SyntaxFactory.Token(SyntaxKind.CloseParenToken));
+                    updatedCtor = updatedCtor.WithParameterList(normalized);
                 }
 
                 if (!SyntaxFactory.AreEquivalent(annCtor, updatedCtor))
@@ -291,6 +332,71 @@ namespace DeathScriptsAnalyzer.CodeFixes
 
             SyntaxNode newRoot = root.ReplaceNode(typeDecl, finalType);
             return document.WithSyntaxRoot(newRoot);
+        }
+
+        private static DocumentationCommentTriviaSyntax RemoveParamDocumentation(DocumentationCommentTriviaSyntax doc, string paramName)
+        {
+            static bool IsWhitespace(XmlNodeSyntax n) => n is XmlTextSyntax xt && xt.TextTokens.All(t => t.IsKind(SyntaxKind.XmlTextLiteralNewLineToken) || string.IsNullOrWhiteSpace(t.Text));
+
+            SyntaxList<XmlNodeSyntax> content = doc.Content;
+            List<XmlNodeSyntax> kept = [];
+            bool removedAny = false;
+
+            int i = 0;
+            while (i < content.Count)
+            {
+                XmlNodeSyntax node = content[i];
+                bool isParam = false;
+                if (node is XmlElementSyntax el && el.StartTag.Name.LocalName.Text == "param")
+                {
+                    XmlNameAttributeSyntax? nameAttr = el.StartTag.Attributes
+                        .OfType<XmlNameAttributeSyntax>()
+                        .FirstOrDefault(a => a.Name.LocalName.Text == "name");
+                    string? value = nameAttr?.Identifier.Identifier.ValueText;
+                    isParam = value == paramName;
+                }
+                else if (node is XmlEmptyElementSyntax empty && empty.Name.LocalName.Text == "param")
+                {
+                    XmlNameAttributeSyntax? nameAttr = empty.Attributes
+                        .OfType<XmlNameAttributeSyntax>()
+                        .FirstOrDefault(a => a.Name.LocalName.Text == "name");
+                    string? value = nameAttr?.Identifier.Identifier.ValueText;
+                    isParam = value == paramName;
+                }
+
+                if (isParam)
+                {
+                    removedAny = true;
+
+                    // If the previous kept node is whitespace-only, drop it to avoid leftover blank /// lines
+                    if (kept.Count > 0 && IsWhitespace(kept[kept.Count - 1]))
+                    {
+                        kept.RemoveAt(kept.Count - 1);
+                    }
+
+                    // Skip this <param> node
+                    i++;
+
+                    // If the next node is whitespace-only, skip it too unless it's the final trailing whitespace
+                    if (i < content.Count && IsWhitespace(content[i]))
+                    {
+                        bool hasMoreAfter = (i + 1) < content.Count;
+                        if (hasMoreAfter)
+                        {
+                            i++; // consume one whitespace node following the removed <param>
+                        }
+
+                        // else: keep final trailing whitespace to preserve separation from code line
+                    }
+
+                    continue;
+                }
+
+                kept.Add(node);
+                i++;
+            }
+
+            return removedAny ? doc.WithContent(SyntaxFactory.List(kept)) : doc;
         }
     }
 }
